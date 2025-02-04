@@ -16,7 +16,7 @@ namespace Cameras.Tests
         {
             Destination destination = new(world, new(1980, 1080), "dummy");
             Camera camera = new(world, destination, CameraSettings.CreatePerspectiveDegrees(90), 0f, 1000f);
-            Transform cameraTransform = camera.AsEntity().Become<Transform>();
+            Transform cameraTransform = camera.Become<Transform>();
 
             simulator.Update(TimeSpan.FromSeconds(0.01f));
 
@@ -56,7 +56,7 @@ namespace Cameras.Tests
         {
             Destination destination = new(world, new(1980, 1080), "dummy");
             Camera camera = new(world, destination, CameraSettings.CreatePerspectiveDegrees(90), 0f, 1000f);
-            Transform cameraTransform = camera.AsEntity().Become<Transform>();
+            Transform cameraTransform = camera.Become<Transform>();
 
             simulator.Update(TimeSpan.FromSeconds(0.01f));
 
