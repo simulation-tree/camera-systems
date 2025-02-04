@@ -1,0 +1,157 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '.github/workflows/test.yml'
+    branches:
+      - main
+      - dev
+      - dev/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+      checks: write
+      contents: write
+      pull-requests: write
+      actions: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.2
+        with:
+          path: ${{ github.event.repository.name }}
+
+      - name: Checkout `unmanaged`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/unmanaged
+          token: ${{ secrets.PAT }}
+          path: unmanaged
+
+      - name: Checkout `collections`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/collections
+          token: ${{ secrets.PAT }}
+          path: collections
+
+      - name: Checkout `types`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/types
+          token: ${{ secrets.PAT }}
+          path: types
+
+      - name: Checkout `worlds`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/worlds
+          token: ${{ secrets.PAT }}
+          path: worlds
+
+      - name: Checkout `data`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/data
+          token: ${{ secrets.PAT }}
+          path: data
+
+      - name: Checkout `rendering`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/rendering
+          token: ${{ secrets.PAT }}
+          path: rendering
+
+      - name: Checkout `simulation`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/simulation
+          token: ${{ secrets.PAT }}
+          path: simulation
+
+      - name: Checkout `shaders`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/shaders
+          token: ${{ secrets.PAT }}
+          path: shaders
+
+      - name: Checkout `fonts`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/fonts
+          token: ${{ secrets.PAT }}
+          path: fonts
+
+      - name: Checkout `textures`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/textures
+          token: ${{ secrets.PAT }}
+          path: textures
+
+      - name: Checkout `transforms`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/transforms
+          token: ${{ secrets.PAT }}
+          path: transforms
+
+      - name: Checkout `transform-systems`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/transform-systems
+          token: ${{ secrets.PAT }}
+          path: transform-systems
+
+      - name: Checkout `meshes`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/meshes
+          token: ${{ secrets.PAT }}
+          path: meshes
+
+      - name: Checkout `bin-packer`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/bin-packer
+          token: ${{ secrets.PAT }}
+          path: bin-packer
+      
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Source
+        run: dotnet restore "${{ github.event.repository.name }}/source"
+
+      - name: Restore Tests
+        run: dotnet restore "${{ github.event.repository.name }}/tests"
+
+      - name: Build Source
+        run: dotnet build "${{ github.event.repository.name }}/source" -c Debug
+
+      - name: Build Tests
+        run: dotnet build "${{ github.event.repository.name }}/tests" -c Debug
+
+      - name: Test
+        run: dotnet test "${{ github.event.repository.name }}/tests" -c Debug --logger "trx" --no-build
+
+      - name: Publish Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          working-directory:  ${{ github.event.repository.name }}
+          name: Report
+          path: 'tests/TestResults/*.trx'
+          reporter: dotnet-trx
+          fail-on-error: false
