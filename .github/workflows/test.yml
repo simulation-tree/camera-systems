@@ -132,6 +132,13 @@ jobs:
           repository: game-simulations/bin-packer
           token: ${{ secrets.PAT }}
           path: bin-packer
+
+      - name: Checkout `cameras`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/cameras
+          token: ${{ secrets.PAT }}
+          path: cameras
       
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
