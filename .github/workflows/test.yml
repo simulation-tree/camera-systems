@@ -83,6 +83,41 @@ jobs:
           repository: game-simulations/transform-systems
           token: ${{ secrets.PAT }}
           path: transform-systems
+      
+      - name: Checkout `shaders`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/shaders
+          token: ${{ secrets.PAT }}
+          path: shaders
+      
+      - name: Checkout `meshes`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/meshes
+          token: ${{ secrets.PAT }}
+          path: meshes
+      
+      - name: Checkout `materials`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/materials
+          token: ${{ secrets.PAT }}
+          path: materials
+      
+      - name: Checkout `data`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/data
+          token: ${{ secrets.PAT }}
+          path: data
+      
+      - name: Checkout `collections`
+        uses: actions/checkout@v4.1.2
+        with:
+          repository: game-simulations/collections
+          token: ${{ secrets.PAT }}
+          path: collections
             
       - name: Setup
         uses: actions/setup-dotnet@v4
