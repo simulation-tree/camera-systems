@@ -4,6 +4,7 @@ using Simulation;
 using System;
 using System.Numerics;
 using Transforms.Components;
+using Unmanaged;
 using Worlds;
 
 namespace Cameras.Systems
@@ -27,11 +28,21 @@ namespace Cameras.Systems
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
-            ComponentQuery<CameraSettings> camerasWithoutMatricesQuery = new(world);
-            camerasWithoutMatricesQuery.ExcludeComponent<CameraMatrices>();
-            foreach (var r in camerasWithoutMatricesQuery)
+            ComponentType settingsType = world.Schema.GetComponent<CameraSettings>();
+            ComponentType matricesType = world.Schema.GetComponent<CameraMatrices>();
+            ComponentType viewportType = world.Schema.GetComponent<IsViewport>();
+
+            //ensure cameras have a matrices component
+            foreach (Chunk chunk in world.Chunks)
             {
-                operation.SelectEntity(r.entity);
+                if (chunk.Definition.Contains(settingsType) && !chunk.Definition.Contains(matricesType))
+                {
+                    USpan<uint> entities = chunk.Entities;
+                    for (uint i = 0; i < entities.Length; i++)
+                    {
+                        operation.SelectEntity(entities[i]);
+                    }
+                }
             }
 
             if (operation.Count > 0)
@@ -41,67 +52,72 @@ namespace Cameras.Systems
                 operation.Clear();
             }
 
-            ComponentQuery<CameraSettings, CameraMatrices, IsViewport, CameraSettings> query = new(world);
-            foreach (var r in query)
+            foreach (Chunk chunk in world.Chunks)
             {
-                ref CameraSettings settings = ref r.component4;
-                if (settings.orthographic)
+                Definition key = chunk.Definition;
+                if (key.Contains(settingsType) && key.Contains(matricesType) && key.Contains(viewportType))
                 {
-                    CalculateOrthographic(world, r);
-                }
-                else
-                {
-                    CalculatePerspective(world, r);
+                    USpan<uint> entities = chunk.Entities;
+                    USpan<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
+                    USpan<CameraMatrices> matricesComponents = chunk.GetComponents<CameraMatrices>(matricesType);
+                    USpan<IsViewport> viewportComponents = chunk.GetComponents<IsViewport>(viewportType);
+                    for (uint i = 0; i < entities.Length; i++)
+                    {
+                        ref CameraSettings settings = ref settingsComponents[i];
+                        ref CameraMatrices matrices = ref matricesComponents[i];
+                        ref IsViewport viewport = ref viewportComponents[i];
+                        uint entity = entities[i];
+                        if (settings.orthographic)
+                        {
+                            CalculateOrthographic(world, entity, ref settings, ref matrices, ref viewport);
+                        }
+                        else
+                        {
+                            CalculatePerspective(world, entity, ref settings, ref matrices, ref viewport);
+                        }
+                    }
                 }
             }
         }
 
-        private static void CalculatePerspective(World world, Chunk.Entity<CameraSettings, CameraMatrices, IsViewport, CameraSettings> r)
+        private static void CalculatePerspective(World world, uint entity, ref CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
         {
-            uint destinationEntity = world.GetReference(r.entity, r.component3.destinationReference);
+            uint destinationEntity = world.GetReference(entity, viewport.destinationReference);
             if (destinationEntity == default || !world.ContainsEntity(destinationEntity))
             {
                 return;
             }
 
-            LocalToWorld ltw = world.GetComponent(r.entity, LocalToWorld.Default);
-            (Vector3 position, Quaternion rotation, Vector3 scale) = ltw.Decomposed;
+            LocalToWorld ltw = world.GetComponent(entity, LocalToWorld.Default);
+            Vector3 position = ltw.Position;
             Vector3 forward = ltw.Forward;
             Vector3 up = ltw.Up;
             Vector3 target = position + forward;
             Matrix4x4 view = Matrix4x4.CreateLookAt(position, target, up);
-            Matrix4x4 projection = Matrix4x4.Identity;
-            ref CameraSettings fov = ref r.component4;
             float aspect = world.GetComponent<IsDestination>(destinationEntity).AspectRatio;
-            (float min, float max) = r.component1.Depth;
-            projection = Matrix4x4.CreatePerspectiveFieldOfView(fov.size, aspect, min + 0.1f, max);
+            (float min, float max) = settings.Depth;
+            Matrix4x4 projection = Matrix4x4.CreatePerspectiveFieldOfView(settings.size, aspect, min + 0.1f, max);
             projection.M43 += 0.1f;
             projection.M11 *= -1; //flip x axis
-            r.component2 = new(projection, view);
+            matrices = new(projection, view);
         }
 
-        private static void CalculateOrthographic(World world, Chunk.Entity<CameraSettings, CameraMatrices, IsViewport, CameraSettings> r)
+        private static void CalculateOrthographic(World world, uint entity, ref CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
         {
-            uint destinationEntity = world.GetReference(r.entity, r.component3.destinationReference);
+            uint destinationEntity = world.GetReference(entity, viewport.destinationReference);
             if (destinationEntity == default || !world.ContainsEntity(destinationEntity))
             {
                 return;
             }
 
-            LocalToWorld ltw = world.GetComponent(r.entity, LocalToWorld.Default);
-            (Vector3 position, Quaternion rotation, Vector3 scale) = ltw.Decomposed;
-            Vector3 forward = ltw.Forward;
-            Vector3 up = ltw.Up;
-            Vector3 target = position + forward;
-            Matrix4x4 view = Matrix4x4.CreateLookAt(position, target, up);
-            Matrix4x4 projection = Matrix4x4.Identity;
-            ref CameraSettings orthographicSize = ref r.component4;
+            LocalToWorld ltw = world.GetComponent(entity, LocalToWorld.Default);
+            Vector3 position = ltw.Position;
             Vector2 size = world.GetComponent<IsDestination>(destinationEntity).SizeAsVector2();
-            (float min, float max) = r.component1.Depth;
-            projection = Matrix4x4.CreateOrthographicOffCenter(0, orthographicSize.size * size.X, 0, orthographicSize.size * size.Y, min + 0.1f, max);
+            (float min, float max) = settings.Depth;
+            Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, settings.size * size.X, 0, settings.size * size.Y, min + 0.1f, max);
             projection.M43 += 0.1f;
-            view = Matrix4x4.CreateTranslation(-position);
-            r.component2 = new(projection, view);
+            Matrix4x4 view = Matrix4x4.CreateTranslation(-position);
+            matrices = new(projection, view);
         }
 
         void ISystem.Finish(in SystemContainer systemContainer, in World world)
