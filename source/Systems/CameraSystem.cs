@@ -35,27 +35,25 @@ namespace Cameras.Systems
             //ensure cameras have a matrices component
             foreach (Chunk chunk in world.Chunks)
             {
-                if (chunk.Definition.Contains(settingsType) && !chunk.Definition.Contains(matricesType))
+                Definition definition = chunk.Definition;
+                if (definition.Contains(settingsType) && !definition.Contains(matricesType))
                 {
                     USpan<uint> entities = chunk.Entities;
-                    for (uint i = 0; i < entities.Length; i++)
-                    {
-                        operation.SelectEntity(entities[i]);
-                    }
+                    operation.SelectEntities(entities);
                 }
             }
 
             if (operation.Count > 0)
             {
-                operation.AddComponent<CameraMatrices>(world.Schema);
-                world.Perform(operation);
+                operation.AddComponent<CameraMatrices>();
+                operation.Perform(world);
                 operation.Clear();
             }
 
             foreach (Chunk chunk in world.Chunks)
             {
-                Definition key = chunk.Definition;
-                if (key.Contains(settingsType) && key.Contains(matricesType) && key.Contains(viewportType))
+                Definition definition = chunk.Definition;
+                if (definition.Contains(settingsType) && definition.Contains(matricesType) && definition.Contains(viewportType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
