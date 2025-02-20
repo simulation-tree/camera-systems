@@ -86,7 +86,7 @@ namespace Cameras.Systems
                 return;
             }
 
-            LocalToWorld ltw = world.GetComponent(entity, LocalToWorld.Default);
+            LocalToWorld ltw = world.GetComponentOrDefault(entity, LocalToWorld.Default);
             Vector3 position = ltw.Position;
             Vector3 forward = ltw.Forward;
             Vector3 up = ltw.Up;
@@ -108,7 +108,7 @@ namespace Cameras.Systems
                 return;
             }
 
-            LocalToWorld ltw = world.GetComponent(entity, LocalToWorld.Default);
+            LocalToWorld ltw = world.GetComponentOrDefault(entity, LocalToWorld.Default);
             Vector3 position = ltw.Position;
             Vector2 size = world.GetComponent<IsDestination>(destinationEntity).SizeAsVector2();
             (float min, float max) = settings.Depth;
