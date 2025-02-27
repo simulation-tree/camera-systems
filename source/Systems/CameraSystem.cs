@@ -28,15 +28,15 @@ namespace Cameras.Systems
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
-            ComponentType settingsType = world.Schema.GetComponent<CameraSettings>();
-            ComponentType matricesType = world.Schema.GetComponent<CameraMatrices>();
-            ComponentType viewportType = world.Schema.GetComponent<IsViewport>();
+            ComponentType settingsType = world.Schema.GetComponentType<CameraSettings>();
+            ComponentType matricesType = world.Schema.GetComponentType<CameraMatrices>();
+            ComponentType viewportType = world.Schema.GetComponentType<IsViewport>();
 
             //ensure cameras have a matrices component
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
-                if (definition.Contains(settingsType) && !definition.Contains(matricesType))
+                if (definition.ContainsComponent(settingsType) && !definition.ContainsComponent(matricesType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     operation.SelectEntities(entities);
@@ -53,7 +53,7 @@ namespace Cameras.Systems
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition definition = chunk.Definition;
-                if (definition.Contains(settingsType) && definition.Contains(matricesType) && definition.Contains(viewportType))
+                if (definition.ContainsComponent(settingsType) && definition.ContainsComponent(matricesType) && definition.ContainsComponent(viewportType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
