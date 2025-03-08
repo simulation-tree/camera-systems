@@ -6,8 +6,8 @@
         <Nullable>enable</Nullable>
         <Title>Camera Systems</Title>
         <Authors>popcron</Authors>
-        <Company>game-simulations</Company>
-        <RepositoryUrl>https://github.com/game-simulations/camera-systems</RepositoryUrl>
+        <Company>simulation-tree</Company>
+        <RepositoryUrl>https://github.com/simulation-tree/camera-systems</RepositoryUrl>
         <IsTrimmable>True</IsTrimmable>
         <IsAotCompatible>True</IsAotCompatible>
         <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
