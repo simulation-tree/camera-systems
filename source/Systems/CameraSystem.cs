@@ -4,7 +4,6 @@ using Simulation;
 using System;
 using System.Numerics;
 using Transforms.Components;
-using Unmanaged;
 using Worlds;
 
 namespace Cameras.Systems
@@ -38,8 +37,7 @@ namespace Cameras.Systems
                 Definition definition = chunk.Definition;
                 if (definition.ContainsComponent(settingsType) && !definition.ContainsComponent(matricesType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    operation.SelectEntities(entities);
+                    operation.SelectEntities(chunk.Entities);
                 }
             }
 
@@ -55,11 +53,11 @@ namespace Cameras.Systems
                 Definition definition = chunk.Definition;
                 if (definition.ContainsComponent(settingsType) && definition.ContainsComponent(matricesType) && definition.ContainsComponent(viewportType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    USpan<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
-                    USpan<CameraMatrices> matricesComponents = chunk.GetComponents<CameraMatrices>(matricesType);
-                    USpan<IsViewport> viewportComponents = chunk.GetComponents<IsViewport>(viewportType);
-                    for (uint i = 0; i < entities.Length; i++)
+                    ReadOnlySpan<uint> entities = chunk.Entities;
+                    Span<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
+                    Span<CameraMatrices> matricesComponents = chunk.GetComponents<CameraMatrices>(matricesType);
+                    Span<IsViewport> viewportComponents = chunk.GetComponents<IsViewport>(viewportType);
+                    for (int i = 0; i < entities.Length; i++)
                     {
                         ref CameraSettings settings = ref settingsComponents[i];
                         ref CameraMatrices matrices = ref matricesComponents[i];
