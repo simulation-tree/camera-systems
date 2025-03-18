@@ -17,19 +17,20 @@ namespace Cameras.Systems
             operation = new();
         }
 
-        void ISystem.Start(in SystemContainer systemContainer, in World world)
+        public readonly void Dispose()
         {
-            if (systemContainer.World == world)
-            {
-                systemContainer.Write(new CameraSystem());
-            }
+            operation.Dispose();
         }
 
-        void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
+        void ISystem.Start(in SystemContext context, in World world)
         {
-            ComponentType settingsType = world.Schema.GetComponentType<CameraSettings>();
-            ComponentType matricesType = world.Schema.GetComponentType<CameraMatrices>();
-            ComponentType viewportType = world.Schema.GetComponentType<IsViewport>();
+        }
+
+        void ISystem.Update(in SystemContext context, in World world, in TimeSpan delta)
+        {
+            int settingsType = world.Schema.GetComponentType<CameraSettings>();
+            int matricesType = world.Schema.GetComponentType<CameraMatrices>();
+            int viewportType = world.Schema.GetComponentType<IsViewport>();
 
             //ensure cameras have a matrices component
             foreach (Chunk chunk in world.Chunks)
@@ -54,9 +55,9 @@ namespace Cameras.Systems
                 if (definition.ContainsComponent(settingsType) && definition.ContainsComponent(matricesType) && definition.ContainsComponent(viewportType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
-                    Span<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
-                    Span<CameraMatrices> matricesComponents = chunk.GetComponents<CameraMatrices>(matricesType);
-                    Span<IsViewport> viewportComponents = chunk.GetComponents<IsViewport>(viewportType);
+                    ComponentEnumerator<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
+                    ComponentEnumerator<CameraMatrices> matricesComponents = chunk.GetComponents<CameraMatrices>(matricesType);
+                    ComponentEnumerator<IsViewport> viewportComponents = chunk.GetComponents<IsViewport>(viewportType);
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref CameraSettings settings = ref settingsComponents[i];
@@ -116,12 +117,8 @@ namespace Cameras.Systems
             matrices = new(projection, view);
         }
 
-        void ISystem.Finish(in SystemContainer systemContainer, in World world)
+        void ISystem.Finish(in SystemContext context, in World world)
         {
-            if (systemContainer.World == world)
-            {
-                operation.Dispose();
-            }
         }
     }
 }

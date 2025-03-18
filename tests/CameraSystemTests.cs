@@ -29,8 +29,8 @@ namespace Cameras.Systems.Tests
         protected override void SetUp()
         {
             base.SetUp();
-            simulator.AddSystem<TransformSystem>();
-            simulator.AddSystem<CameraSystem>();
+            simulator.AddSystem(new TransformSystem());
+            simulator.AddSystem(new CameraSystem());
         }
     }
 }
