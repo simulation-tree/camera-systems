@@ -109,7 +109,7 @@ namespace Cameras.Systems
 
             LocalToWorld ltw = world.GetComponentOrDefault(entity, LocalToWorld.Default);
             Vector3 position = ltw.Position;
-            Vector2 size = world.GetComponent<IsDestination>(destinationEntity).SizeAsVector2();
+            Vector2 size = world.GetComponent<IsDestination>(destinationEntity).GetSizeAsVector2();
             (float min, float max) = settings.Depth;
             Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, settings.size * size.X, 0, settings.size * size.Y, min + 0.1f, max);
             projection.M43 += 0.1f;
