@@ -5,7 +5,6 @@ using System;
 using System.Numerics;
 using Transforms;
 using Transforms.Components;
-using Worlds;
 
 namespace Cameras.Tests
 {

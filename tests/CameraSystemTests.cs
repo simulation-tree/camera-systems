@@ -1,5 +1,4 @@
-﻿using Cameras.Systems;
-using Rendering;
+﻿using Rendering;
 using Simulation.Tests;
 using Transforms;
 using Transforms.Systems;
