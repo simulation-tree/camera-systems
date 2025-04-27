@@ -46,7 +46,7 @@ namespace Cameras.Systems
             {
                 operation.AddComponent<CameraMatrices>();
                 operation.Perform(world);
-                operation.Clear();
+                operation.Reset();
             }
 
             foreach (Chunk chunk in world.Chunks)
