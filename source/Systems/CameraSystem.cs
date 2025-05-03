@@ -75,7 +75,7 @@ namespace Cameras.Systems
 
             if (operation.Count > 0)
             {
-                operation.AddComponent<CameraMatrices>();
+                operation.AddComponentType<CameraMatrices>();
                 operation.Perform(world);
                 operation.Reset();
             }
@@ -101,23 +101,23 @@ namespace Cameras.Systems
                             return;
                         }
 
-                        ref CameraSettings settings = ref settingsComponents[i];
+                        CameraSettings settings = settingsComponents[i];
                         ref CameraMatrices matrices = ref matricesComponents[i];
                         IsDestination destination = destinations[destinationEntity];
                         if (settings.orthographic)
                         {
-                            CalculateOrthographic(world, entity, destination, ltwType, ref settings, ref matrices, ref viewport);
+                            CalculateOrthographic(world, entity, destination, ltwType, settings, ref matrices, ref viewport);
                         }
                         else
                         {
-                            CalculatePerspective(world, entity, destination, ltwType, ref settings, ref matrices, ref viewport);
+                            CalculatePerspective(world, entity, destination, ltwType, settings, ref matrices, ref viewport);
                         }
                     }
                 }
             }
         }
 
-        private static void CalculatePerspective(World world, uint entity, IsDestination destination, int ltwType, ref CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
+        private static void CalculatePerspective(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
         {
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
@@ -133,7 +133,7 @@ namespace Cameras.Systems
             matrices = new(projection, view);
         }
 
-        private static void CalculateOrthographic(World world, uint entity, IsDestination destination, int ltwType, ref CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
+        private static void CalculateOrthographic(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
         {
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
