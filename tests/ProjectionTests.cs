@@ -1,7 +1,6 @@
 ﻿using Cameras.Components;
 using Cameras.Systems.Tests;
 using Rendering;
-using System;
 using System.Numerics;
 using Transforms;
 using Transforms.Components;
@@ -17,7 +16,7 @@ namespace Cameras.Tests
             Camera camera = new(world, destination, CameraSettings.CreatePerspectiveDegrees(90), 0f, 1000f);
             Transform cameraTransform = camera.Become<Transform>();
 
-            simulator.Update(TimeSpan.FromSeconds(0.01f));
+            Update();
 
             CameraMatrices matrices = camera.Matrices;
             Assert.That(matrices.Position.X, Is.EqualTo(0).Within(0.1f));
@@ -27,7 +26,7 @@ namespace Cameras.Tests
             cameraTransform.LocalPosition = new(2, 1, 0);
             cameraTransform.LocalRotation = Rotation.FromDirection(Vector3.UnitZ).value;
 
-            simulator.Update(TimeSpan.FromSeconds(0.01f));
+            Update();
 
             matrices = camera.Matrices;
             Assert.That(matrices.Position.X, Is.EqualTo(2).Within(0.1f));
@@ -39,7 +38,7 @@ namespace Cameras.Tests
 
             cameraTransform.LocalRotation = Rotation.FromDirection(Vector3.UnitX).value;
 
-            simulator.Update(TimeSpan.FromSeconds(0.01f));
+            Update();
 
             matrices = camera.Matrices;
             Assert.That(matrices.Position.X, Is.EqualTo(2).Within(0.1f));
@@ -57,7 +56,7 @@ namespace Cameras.Tests
             Camera camera = new(world, destination, CameraSettings.CreatePerspectiveDegrees(90), 0f, 1000f);
             Transform cameraTransform = camera.Become<Transform>();
 
-            simulator.Update(TimeSpan.FromSeconds(0.01f));
+            Update();
 
             CameraMatrices projection = camera.Matrices;
             (Vector3 origin, Vector3 direction) ray = projection.GetRayFromScreenPoint(new(0.5f, 0.5f));
@@ -72,7 +71,7 @@ namespace Cameras.Tests
             cameraTransform.LocalPosition = new(2, 1, 0);
             cameraTransform.LocalRotation = Rotation.FromDirection(Vector3.UnitX).value;
 
-            simulator.Update(TimeSpan.FromSeconds(0.01f));
+            Update();
 
             projection = camera.Matrices;
             ray = projection.GetRayFromScreenPoint(new(0.5f, 0.5f));

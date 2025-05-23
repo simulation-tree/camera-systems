@@ -10,7 +10,7 @@ using Worlds;
 
 namespace Cameras.Systems
 {
-    public readonly partial struct CameraSystem : ISystem
+    public class CameraSystem : ISystem, IDisposable
     {
         private readonly Operation operation;
         private readonly Array<IsDestination> destinations;
@@ -21,18 +21,15 @@ namespace Cameras.Systems
             destinations = new();
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
             destinations.Dispose();
             operation.Dispose();
         }
 
-        void ISystem.Start(in SystemContext context, in World world)
+        void ISystem.Update(Simulator simulator, double deltaTime)
         {
-        }
-
-        void ISystem.Update(in SystemContext context, in World world, in TimeSpan delta)
-        {
+            World world = simulator.world;
             Schema schema = world.Schema;
             int settingsType = schema.GetComponentType<CameraSettings>();
             int matricesType = schema.GetComponentType<CameraMatrices>();
@@ -48,6 +45,7 @@ namespace Cameras.Systems
             }
 
             destinations.Clear();
+            Span<IsDestination> destinationsSpan = destinations.AsSpan();
 
             ReadOnlySpan<Chunk> chunks = world.Chunks;
             foreach (Chunk chunk in chunks)
@@ -58,7 +56,7 @@ namespace Cameras.Systems
                     ComponentEnumerator<IsDestination> components = chunk.GetComponents<IsDestination>(destinationType);
                     for (int i = 0; i < entities.Length; i++)
                     {
-                        destinations[entities[i]] = components[i];
+                        destinationsSpan[(int)entities[i]] = components[i];
                     }
                 }
             }
@@ -103,21 +101,21 @@ namespace Cameras.Systems
 
                         CameraSettings settings = settingsComponents[i];
                         ref CameraMatrices matrices = ref matricesComponents[i];
-                        IsDestination destination = destinations[destinationEntity];
+                        IsDestination destination = destinationsSpan[(int)destinationEntity];
                         if (settings.orthographic)
                         {
-                            CalculateOrthographic(world, entity, destination, ltwType, settings, ref matrices, ref viewport);
+                            CalculateOrthographic(world, entity, destination, ltwType, settings, ref matrices);
                         }
                         else
                         {
-                            CalculatePerspective(world, entity, destination, ltwType, settings, ref matrices, ref viewport);
+                            CalculatePerspective(world, entity, destination, ltwType, settings, ref matrices);
                         }
                     }
                 }
             }
         }
 
-        private static void CalculatePerspective(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
+        private static void CalculatePerspective(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices)
         {
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
@@ -125,7 +123,7 @@ namespace Cameras.Systems
             Vector3 up = ltw.Up;
             Vector3 target = position + forward;
             Matrix4x4 view = Matrix4x4.CreateLookAt(position, target, up);
-            float aspect = destination.AspectRatio;
+            float aspect = destination.width / (float)destination.height;
             (float min, float max) = settings.Depth;
             Matrix4x4 projection = Matrix4x4.CreatePerspectiveFieldOfView(settings.size, aspect, min + 0.1f, max);
             projection.M43 += 0.1f;
@@ -133,20 +131,16 @@ namespace Cameras.Systems
             matrices = new(projection, view);
         }
 
-        private static void CalculateOrthographic(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices, ref IsViewport viewport)
+        private static void CalculateOrthographic(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices)
         {
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
-            Vector2 size = destination.GetSizeAsVector2();
+            Vector2 size = new(destination.width, destination.height);
             (float min, float max) = settings.Depth;
             Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, settings.size * size.X, 0, settings.size * size.Y, min + 0.1f, max);
             projection.M43 += 0.1f;
             Matrix4x4 view = Matrix4x4.CreateTranslation(-position);
             matrices = new(projection, view);
-        }
-
-        void ISystem.Finish(in SystemContext context, in World world)
-        {
         }
     }
 }
