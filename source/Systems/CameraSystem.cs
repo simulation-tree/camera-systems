@@ -14,11 +14,23 @@ namespace Cameras.Systems
     {
         private readonly Operation operation;
         private readonly Array<IsDestination> destinations;
+        private readonly int settingsType;
+        private readonly int matricesType;
+        private readonly int viewportType;
+        private readonly int ltwType;
+        private readonly int destinationType;
 
-        public CameraSystem()
+        public CameraSystem(Simulator simulator)
         {
             operation = new();
             destinations = new();
+
+            Schema schema = simulator.world.Schema;
+            settingsType = schema.GetComponentType<CameraSettings>();
+            matricesType = schema.GetComponentType<CameraMatrices>();
+            viewportType = schema.GetComponentType<IsViewport>();
+            ltwType = schema.GetComponentType<LocalToWorld>();
+            destinationType = schema.GetComponentType<IsDestination>();
         }
 
         public void Dispose()
@@ -30,12 +42,6 @@ namespace Cameras.Systems
         void ISystem.Update(Simulator simulator, double deltaTime)
         {
             World world = simulator.world;
-            Schema schema = world.Schema;
-            int settingsType = schema.GetComponentType<CameraSettings>();
-            int matricesType = schema.GetComponentType<CameraMatrices>();
-            int viewportType = schema.GetComponentType<IsViewport>();
-            int ltwType = schema.GetComponentType<LocalToWorld>();
-            int destinationType = schema.GetComponentType<IsDestination>();
 
             //find all destination components
             int capacity = (world.MaxEntityValue + 1).GetNextPowerOf2();
