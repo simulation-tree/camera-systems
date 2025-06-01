@@ -1,4 +1,5 @@
 ﻿using Cameras.Components;
+using Cameras.Messages;
 using Collections.Generic;
 using Rendering.Components;
 using Simulation;
@@ -10,8 +11,9 @@ using Worlds;
 
 namespace Cameras.Systems
 {
-    public class CameraSystem : ISystem, IDisposable
+    public sealed partial class CameraSystem : SystemBase, IListener<CameraUpdate>
     {
+        private readonly World world;
         private readonly Operation operation;
         private readonly Array<IsDestination> destinations;
         private readonly int settingsType;
@@ -19,30 +21,31 @@ namespace Cameras.Systems
         private readonly int viewportType;
         private readonly int ltwType;
         private readonly int destinationType;
+        private readonly BitMask cameraComponents;
 
-        public CameraSystem(Simulator simulator)
+        public CameraSystem(Simulator simulator, World world) : base(simulator)
         {
-            operation = new();
+            this.world = world;
+            operation = new(world);
             destinations = new();
 
-            Schema schema = simulator.world.Schema;
+            Schema schema = world.Schema;
             settingsType = schema.GetComponentType<CameraSettings>();
             matricesType = schema.GetComponentType<CameraMatrices>();
             viewportType = schema.GetComponentType<IsViewport>();
             ltwType = schema.GetComponentType<LocalToWorld>();
             destinationType = schema.GetComponentType<IsDestination>();
+            cameraComponents = new(settingsType, matricesType, viewportType);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             destinations.Dispose();
             operation.Dispose();
         }
 
-        void ISystem.Update(Simulator simulator, double deltaTime)
+        void IListener<CameraUpdate>.Receive(ref CameraUpdate message)
         {
-            World world = simulator.world;
-
             //find all destination components
             int capacity = (world.MaxEntityValue + 1).GetNextPowerOf2();
             if (destinations.Length < capacity)
@@ -53,43 +56,43 @@ namespace Cameras.Systems
             destinations.Clear();
             Span<IsDestination> destinationsSpan = destinations.AsSpan();
 
+            //collect destinations and make sure cameras have the matrix component
             ReadOnlySpan<Chunk> chunks = world.Chunks;
-            foreach (Chunk chunk in chunks)
+            for (int c = 0; c < chunks.Length; c++)
             {
-                if (chunk.Definition.ContainsComponent(destinationType))
+                Chunk chunk = chunks[c];
+                if (chunk.Count > 0)
                 {
-                    ReadOnlySpan<uint> entities = chunk.Entities;
-                    ComponentEnumerator<IsDestination> components = chunk.GetComponents<IsDestination>(destinationType);
-                    for (int i = 0; i < entities.Length; i++)
+                    Definition definition = chunk.Definition;
+                    if (definition.ContainsComponent(destinationType))
                     {
-                        destinationsSpan[(int)entities[i]] = components[i];
+                        ReadOnlySpan<uint> entities = chunk.Entities;
+                        ComponentEnumerator<IsDestination> components = chunk.GetComponents<IsDestination>(destinationType);
+                        for (int i = 0; i < entities.Length; i++)
+                        {
+                            destinationsSpan[(int)entities[i]] = components[i];
+                        }
                     }
-                }
-            }
 
-            //ensure cameras have a matrices component
-            foreach (Chunk chunk in chunks)
-            {
-                Definition definition = chunk.Definition;
-                if (definition.ContainsComponent(settingsType) && !definition.ContainsComponent(matricesType))
-                {
-                    operation.SelectEntities(chunk.Entities);
+                    if (definition.ContainsComponent(settingsType) && !definition.ContainsComponent(matricesType))
+                    {
+                        operation.AppendMultipleEntitiesToSelection(chunk.Entities);
+                    }
                 }
             }
 
             if (operation.Count > 0)
             {
-                operation.AddComponentType<CameraMatrices>();
-                operation.Perform(world);
+                operation.AddComponentType(matricesType);
+                operation.Perform();
                 operation.Reset();
             }
 
             chunks = world.Chunks;
-            BitMask componentMask = new(settingsType, matricesType, viewportType);
-            foreach (Chunk chunk in chunks)
+            for (int c = 0; c < chunks.Length; c++)
             {
-                Definition definition = chunk.Definition;
-                if (definition.componentTypes.ContainsAll(componentMask))
+                Chunk chunk = chunks[c];
+                if (chunk.Definition.componentTypes.ContainsAll(cameraComponents))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
@@ -110,18 +113,18 @@ namespace Cameras.Systems
                         IsDestination destination = destinationsSpan[(int)destinationEntity];
                         if (settings.orthographic)
                         {
-                            CalculateOrthographic(world, entity, destination, ltwType, settings, ref matrices);
+                            CalculateOrthographic(entity, destination, settings, ref matrices);
                         }
                         else
                         {
-                            CalculatePerspective(world, entity, destination, ltwType, settings, ref matrices);
+                            CalculatePerspective(entity, destination, settings, ref matrices);
                         }
                     }
                 }
             }
         }
 
-        private static void CalculatePerspective(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices)
+        private void CalculatePerspective(uint entity, IsDestination destination, CameraSettings settings, ref CameraMatrices matrices)
         {
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
@@ -137,7 +140,7 @@ namespace Cameras.Systems
             matrices = new(projection, view);
         }
 
-        private static void CalculateOrthographic(World world, uint entity, IsDestination destination, int ltwType, CameraSettings settings, ref CameraMatrices matrices)
+        private void CalculateOrthographic(uint entity, IsDestination destination, CameraSettings settings, ref CameraMatrices matrices)
         {
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
