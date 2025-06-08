@@ -13,7 +13,7 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,11 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="bin/Debug/net9.0/Camera.Systems.dll" Pack="true" PackagePath="tools/debug/Camera.Systems.dll" Visible="false"/>
-    <Content Include="bin/Debug/net9.0/Camera.Systems.xml" Pack="true" PackagePath="tools/debug/Camera.Systems.xml" Visible="false" Condition="Exists('bin/Debug/net9.0/Camera.Systems.xml')"/>
-    <Content Include="bin/Release/net9.0/Camera.Systems.dll" Pack="true" PackagePath="tools/release/Camera.Systems.dll" Visible="false"/>
-    <Content Include="bin/Release/net9.0/Camera.Systems.xml" Pack="true" PackagePath="tools/release/Camera.Systems.xml" Visible="false" Condition="Exists('bin/Release/net9.0/Camera.Systems.xml')"/>
-    <Content Include="build/Camera.Systems.targets" Pack="true" PackagePath="build/Camera.Systems.targets" Visible="false"/>
+    <Content Include="bin/**/*" Pack="true" PackagePath="lib" Visible="false"/>
+    <Content Include="buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
   </ItemGroup>
 
 </Project>
