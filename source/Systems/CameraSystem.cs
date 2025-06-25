@@ -100,9 +100,9 @@ namespace Cameras.Systems
                     ComponentEnumerator<IsViewport> viewportComponents = chunk.GetComponents<IsViewport>(viewportType);
                     for (int i = 0; i < entities.Length; i++)
                     {
-                        uint entity = entities[i];
+                        uint cameraEntity = entities[i];
                         ref IsViewport viewport = ref viewportComponents[i];
-                        uint destinationEntity = world.GetReference(entity, viewport.destinationReference);
+                        uint destinationEntity = world.GetReference(cameraEntity, viewport.destinationReference);
                         if (destinationEntity == default || !world.ContainsEntity(destinationEntity))
                         {
                             return;
@@ -113,28 +113,27 @@ namespace Cameras.Systems
                         IsDestination destination = destinationsSpan[(int)destinationEntity];
                         if (settings.orthographic)
                         {
-                            CalculateOrthographic(entity, destination, settings, ref matrices);
+                            CalculateOrthographic(cameraEntity, destination, settings, ref matrices);
                         }
                         else
                         {
-                            CalculatePerspective(entity, destination, settings, ref matrices);
+                            CalculatePerspective(cameraEntity, destination, settings, ref matrices);
                         }
                     }
                 }
             }
         }
 
-        private void CalculatePerspective(uint entity, IsDestination destination, CameraSettings settings, ref CameraMatrices matrices)
+        private void CalculatePerspective(uint cameraEntity, IsDestination destination, CameraSettings settings, ref CameraMatrices matrices)
         {
-            LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
+            LocalToWorld ltw = world.GetComponentOrDefault(cameraEntity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
             Vector3 forward = ltw.Forward;
             Vector3 up = ltw.Up;
             Vector3 target = position + forward;
             Matrix4x4 view = Matrix4x4.CreateLookAt(position, target, up);
             float aspect = destination.width / (float)destination.height;
-            (float min, float max) = settings.Depth;
-            Matrix4x4 projection = Matrix4x4.CreatePerspectiveFieldOfView(settings.size, aspect, min + 0.1f, max);
+            Matrix4x4 projection = Matrix4x4.CreatePerspectiveFieldOfView(settings.size, aspect, settings.minDepth + 0.1f, settings.maxDepth);
             projection.M43 += 0.1f;
             projection.M11 *= -1; //flip x axis
             matrices = new(projection, view);
@@ -145,8 +144,7 @@ namespace Cameras.Systems
             LocalToWorld ltw = world.GetComponentOrDefault(entity, ltwType, LocalToWorld.Default);
             Vector3 position = ltw.Position;
             Vector2 size = new(destination.width, destination.height);
-            (float min, float max) = settings.Depth;
-            Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, settings.size * size.X, 0, settings.size * size.Y, min + 0.1f, max);
+            Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, settings.size * size.X, 0, settings.size * size.Y, settings.minDepth + 0.1f, settings.maxDepth);
             projection.M43 += 0.1f;
             Matrix4x4 view = Matrix4x4.CreateTranslation(-position);
             matrices = new(projection, view);
