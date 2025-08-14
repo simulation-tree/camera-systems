@@ -3,7 +3,7 @@
 
     <ItemGroup>
         <Reference Include="Camera.Systems">
-            <HintPath>$(MSBuildThisFileDirectory)..\lib\net9.0\$(Configuration)\Camera.Systems.dll</HintPath>
+            <HintPath>$(MSBuildThisFileDirectory)..\lib\$(TargetFramework)\$(Configuration)\Camera.Systems.dll</HintPath>
         </Reference>
     </ItemGroup>
 
