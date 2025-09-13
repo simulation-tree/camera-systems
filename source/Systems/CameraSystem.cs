@@ -63,8 +63,7 @@ namespace Cameras.Systems
                 Chunk chunk = chunks[c];
                 if (chunk.Count > 0)
                 {
-                    Definition definition = chunk.Definition;
-                    if (definition.ContainsComponent(destinationType))
+                    if (chunk.componentTypes.Contains(destinationType))
                     {
                         ReadOnlySpan<uint> entities = chunk.Entities;
                         ComponentEnumerator<IsDestination> components = chunk.GetComponents<IsDestination>(destinationType);
@@ -74,7 +73,7 @@ namespace Cameras.Systems
                         }
                     }
 
-                    if (definition.ContainsComponent(settingsType) && !definition.ContainsComponent(matricesType))
+                    if (chunk.componentTypes.Contains(settingsType) && !chunk.componentTypes.Contains(matricesType))
                     {
                         operation.AppendMultipleEntitiesToSelection(chunk.Entities);
                     }
@@ -92,7 +91,7 @@ namespace Cameras.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.Definition.componentTypes.ContainsAll(cameraComponents))
+                if (chunk.componentTypes.ContainsAll(cameraComponents))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<CameraSettings> settingsComponents = chunk.GetComponents<CameraSettings>(settingsType);
