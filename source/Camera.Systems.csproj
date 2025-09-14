@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <Title>Camera Systems</Title>
     <Authors>popcron</Authors>
-    <Company>simulation-tree</Company>
+    <Company>Simulation Tree</Company>
     <RepositoryUrl>https://github.com/simulation-tree/camera-systems</RepositoryUrl>
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
